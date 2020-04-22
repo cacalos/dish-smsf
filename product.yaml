@@ -1,0 +1,30 @@
+global:
+  smscSim:
+    clusterIP: "10.100.176.229"
+
+image_shas:
+  my_sample_application: abcdefgh
+
+dish-smsf-svc:
+  service:
+    ports:
+      httpNFServer:
+        nodePort: 32181
+      httpsNFServer: 
+        nodePort: 32182
+
+dish-smsf-emagt:
+  service:
+    emagtWs:
+      ports:
+        ws:
+          nodePort: 32411
+        stat:
+          nodePort: 32412
+          targetPort: 32412
+
+dish-smsf-emgui:
+  service:
+    ports:
+      nginx:
+        nodePort: 32346
