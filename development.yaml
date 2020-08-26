@@ -14,7 +14,7 @@ global:
     db:
       mariadb: 3306
   smscSim:
-    clusterIP: "10.105.51.100"
+    clusterIP: "10.105.51.200"
 
   smsf:
     ipaddr:
@@ -31,22 +31,22 @@ global:
 dish-smsf-svc:
   configmap:
     usmsfConf:
-      usePprof: true
+      usePprof: false
       useH2C: false
 
       logger:
         logLevels:
-          root: "DEBUG"
-          com_uangel: "DEBUG"
+          root: "ERROR"
+          com_uangel: "ERROR"
           samsung:
-            fault: "DEBUG"
-            selfdiag: "DEBUG"
-            reset: "DEBUG"
-            init: "DEBUG"
-            console: "DEBUG"
-            error: "DEBUG"
-            event: "DEBUG"
-            info: "DEBUG"
+            fault: "ERROR"
+            selfdiag: "ERROR"
+            reset: "ERROR"
+            init: "ERROR"
+            console: "ERROR"
+            error: "ERROR"
+            event: "ERROR"
+            info: "ERROR"
 
       # true:  NRF와 NF Discovery 연동 없이 "nrf-local-config"에 설정된 NF profile을 사용한다.
       # false: NRF와 NF Discovery 연동을 통해 NF profile을 얻은 후 이 값을 사용한다.
@@ -98,6 +98,9 @@ dish-smsf-svc:
           simulationMode:
             enabled: false
             returnError: false
+      metric:
+        nf:
+          reportInterval: 1s
 
   deployment:
     containers:
@@ -112,27 +115,21 @@ dish-smsf-svc:
         resources:
           limits:
             # 성능 시험용 설정값 (Resource 제한 #1)
+            #cpu: 6
+            #memory: 512Mi
+
+            # 성능 시험용 설정값 (Resource 제한 #2)
             cpu: 6
             memory: 1Gi
 
-            # 성능 시험용 설정값 (Resource 제한 #2)
-            #cpu: 6000m
-            #memory: 1024Mi
-
-            #cpu: 6000m
-            #memory: 4096Mi
-
           requests:
             # 성능 시험용 설정값 (Resource 제한 #1)
-            cpu: 4
-            memory: 1Gi
-
-            # 성능 시험용 설정값 (Resource 제한 #2)
-            #cpu: 4000m
+            #cpu: 4
             #memory: 256Mi
 
-            #cpu: 4000m
-            #memory: 2048Mi
+            # 성능 시험용 설정값 (Resource 제한 #2)
+            cpu: 4
+            memory: 512Mi
 
       redisServer:
         image: camel.uangel.com:5000/svc_redis:latest
@@ -145,6 +142,13 @@ dish-smsf-svc:
 
   imagePullSecrets:
   - name: harbor-secret
+
+  service:
+    ports:
+      httpNFServer:
+        nodePort: 32081
+      httpsNFServer:
+        nodePort: 32082
 
 dish-smsf-emagt:
   containers:
@@ -160,6 +164,14 @@ dish-smsf-emagt:
         #  memory: 2048Mi
   imagePullSecrets:
   - name: harbor-secret
+  service:
+    emagtWs:
+      ports:
+        ws:
+          nodePort: 32401
+        stat:
+          nodePort: 32402
+
 
 dish-smsf-emgui:
   deployment:
@@ -176,22 +188,26 @@ dish-smsf-emgui:
           #  memory: 2048Mi
   imagePullSecrets:
   - name: harbor-secret
+  service:
+    ports:
+      nginx:
+        nodePort: 32336
 
 dish-smsf-dia:
   configmap:
     httpifLogger:
       logLevels:
-        root: "DEBUG"
-        com_uangel: "DEBUG"
+        root: "ERROR"
+        com_uangel: "ERROR"
         samsung:
-          fault: "DEBUG"
-          selfdiag: "DEBUG"
-          reset: "DEBUG"
-          init: "DEBUG"
-          console: "DEBUG"
-          error: "DEBUG"
-          event: "DEBUG"
-          info: "DEBUG"
+          fault: "ERROR"
+          selfdiag: "ERROR"
+          reset: "ERROR"
+          init: "ERROR"
+          console: "ERROR"
+          error: "ERROR"
+          event: "ERROR"
+          info: "ERROR"
 
   deployment:
     containers:

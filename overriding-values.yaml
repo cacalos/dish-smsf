@@ -14,7 +14,7 @@ global:
     db:
       mariadb: 3306
   smscSim:
-    clusterIP: "10.105.51.100"
+    clusterIP: "10.105.51.200"
 
   smsf:
     ipaddr:
@@ -158,8 +158,18 @@ dish-smsf-emagt:
         #requests:
         #  cpu: 2000m
         #  memory: 2048Mi
+    emagtWs:
+      ports:
   imagePullSecrets:
   - name: harbor-secret
+
+  service:
+    emagtWs:
+      ports:
+        ws:
+          nodePort: 32401
+        stat:
+          nodePort: 32402
 
 dish-smsf-emgui:
   deployment:
@@ -176,6 +186,10 @@ dish-smsf-emgui:
           #  memory: 2048Mi
   imagePullSecrets:
   - name: harbor-secret
+  service:
+    ports:
+      nginx:
+        nodePort: 32336
 
 dish-smsf-dia:
   configmap:
