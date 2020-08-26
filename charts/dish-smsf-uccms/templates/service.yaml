@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.service.name }}
+    {{- toYaml .Values.global.commonLabels | nindent 4 }}
 spec:
   type: ClusterIP
   ports:

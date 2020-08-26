@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.commonResourceName }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      name: {{ .Values.commonResourceName }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Values.commonResourceName }}
+    spec:
+      serviceAccountName: {{ .Values.commonResourceName }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml .Values.imagePullSecrets | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.commonResourceName }}
+          image: {{ .Values.image.name }}
+          command:
+          - kubehasvc
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: {{ .Values.commonResourceName | quote }}
+            - name: CLICOLOR_FORCE
+              value: "1"

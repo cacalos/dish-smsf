@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ $# -ne 1 ]; then
+    echo "Usage: $(basename $0) <pod>"
+    exit 1
+fi
+
+pod="$1"
+
+./conn_to_svc_container "$pod" "redis-server" sh
+

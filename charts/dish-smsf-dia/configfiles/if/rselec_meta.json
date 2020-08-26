@@ -1,0 +1,26 @@
+{
+  "id": "b7307e5e-4ad9-4c48-a1aa-2051302612d9",
+  "info": {
+    "serviceName": "SMSF",
+     "configName": "DecisionConfiguration",
+     "tag": "v1.0"
+  },
+  "definitions": {
+    "DECISION": {
+      "description": "Decision Table Information",
+      "schema": {
+        "items": {
+          "properties": {
+              "Prefix": {"type": "string"},
+              "Decision": {
+                "type": "string",
+                "enum": ["SIGTRAN", "DIAMETER"]
+               }
+          },
+          "type": "object"
+        },
+          "type": "array"
+      }
+    }
+  }
+} 

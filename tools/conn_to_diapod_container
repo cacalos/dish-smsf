@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+    echo "Usage: $(basename $0) <dia_pod_id (0 or 1)> <container>"
+    exit 1
+fi
+
+id="$1"
+container="$2"
+
+./conn_to_svc_container usmsf-dia-svc-${id} "${container}" sh
+

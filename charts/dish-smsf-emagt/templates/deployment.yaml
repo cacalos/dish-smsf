@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Values.service.emagt.name }}
+    {{- toYaml .Values.global.commonLabels | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
@@ -15,6 +16,7 @@ spec:
       labels:
         app: {{ .Values.service.emagt.name }}
         version: v1
+        {{- toYaml .Values.global.commonLabels | nindent 8 }}
     spec:
       {{- if .Values.global.nodeName }}
       nodeName: {{ .Values.global.nodeName }}
@@ -22,12 +24,15 @@ spec:
       volumes:
       - name: shared-data
         emptyDir: {}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml .Values.imagePullSecrets | nindent 6 }}
+      {{- end }}
       containers:
       - name: emagt
         image: {{ .Values.deployment.containers.emagt.image }}
         imagePullPolicy: {{ .Values.deployment.containers.emagt.imagePullPolicy }}
-        {{- if .Values.resources }}
-        resources: {{ toYaml .Values.resources | nindent 12 }}
+        {{- if .Values.deployment.containers.emagt.resources }}
+        resources: {{ toYaml .Values.deployment.containers.emagt.resources | nindent 10 }}
         {{- end }}
         ports:
         - containerPort: {{ .Values.global.port.emagt.http }}
@@ -35,6 +40,10 @@ spec:
         - containerPort: 8080
         env:
         - name: MYSQL_ADDR
+          {{- if (eq .Values.global.cloudPlatform "AWS") }}
+          value: "{{ .Values.global.aws.dbEndPoint }}"
+          {{- else }}
           value: "{{ .Values.global.serviceName.mariadb }}.{{ .Release.Namespace }}.svc.{{ .Values.global.dnsName.zone }}"
+          {{- end }}
         - name: SUPPORT_EXPORTER
           value: "true"

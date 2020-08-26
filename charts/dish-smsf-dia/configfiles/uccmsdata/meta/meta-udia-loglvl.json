@@ -1,0 +1,40 @@
+{
+	"id": "4a6331b8-d065-11ea-87d0-0242ac130003",
+	"info": {
+		"serviceName": "UDIA_LOGLVL",
+		"configName": "loglvl",
+		"version": "v1.0",
+		"descrpiption": "DIAMETER log level configuration"
+	},
+	"definitions": {
+		"logs" : {
+			"schema": {
+				"type": "array",
+				"items": {
+					"type": "object",
+					"properties": {
+						"name" : {
+							"type" : "string",
+							"description" : "LOG name",
+							"default" : ""
+						},
+						"level" : {
+							"type" : "string",
+							"enum": [
+								"CRT",
+								"MAJ",
+								"MIN",
+								"ERR",
+								"INFO",
+								"DBG",
+								"DBG2",
+								"DETAIL"
+							],
+							"default" : "INFO" 
+						}
+					}
+				}
+			}
+		}
+	}
+}

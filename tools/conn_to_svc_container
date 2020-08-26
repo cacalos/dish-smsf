@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ $# -ne 3 ]; then
+    echo "Usage: $(basename $0) <pod> <container> <shell>"
+    exit 1
+fi
+
+pod="$1"
+container="$2"
+shell="$3"
+
+./conn_to_container coredev-usmsf "$pod" "$container" "$shell"
+

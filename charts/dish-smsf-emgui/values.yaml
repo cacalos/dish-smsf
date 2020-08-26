@@ -10,9 +10,16 @@ fullnameOverride: ""
 deployment:
   containers:
     emgui:
-      #image: camel.uangel.com:5000/emgui:v050
       image: camel.uangel.com:5000/emgui:latest
       imagePullPolicy: IfNotPresent
+      resources:
+        limits:
+          cpu: 2
+          memory: 2Gi
+        requests:
+          cpu: 2
+          memory: 2Gi
+
   env:
     emguiDB:
       username: "root"
@@ -49,17 +56,8 @@ ingress: {}
 #  #    hosts:
 #  #      - chart-example.local
 
-resources:
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  limits:
-    cpu: 2000m
-    memory: 2048Mi
-  requests:
-    cpu: 2000m
-    memory: 2048Mi
+#imagePullSecrets:
+#- name: harbor-secret
 
 nodeSelector: {}
 

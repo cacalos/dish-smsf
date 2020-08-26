@@ -1,150 +1,357 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.configmaps.names.adif }}
-  selfLink: /api/v1/namespaces/{{ .Release.Namespace }}/configmaps/{{ .Values.configmaps.names.adif }}
+  name: {{ .Values.configmap.names.adif }}
+  namespace: {{ .Release.Namespace }}
 data:
   adif.conf: |-
+    ################################################################################
+    #
+    # Configration File for ADIF - USMSF 
+    #
+    ################################################################################
+
     [ADIF]
-    ACTIVE_STANDBY = {{ .Values.configmaps.adifConf.sections.adif.activeStandby }}
-    CHECK_OTHERS = true
-    LOG_FILE = log/ADIF/adif
-    MSG_LOG_FILE = log/ADIF/adifmsg
- 
+    LOG_FORMAT = 0x400BE  # (default: 0x0400BE)(Creating file per month, "[INFO] MMDD | HH:MMSS.MS", THREAD SAFE)
+    LOG_FILE = log/adif/adif # (default: log/adif)
+    MSG_LOG_FORMAT = 0x040080  # (default: 0x040080)(Creating file per month, THREAD SAFE)
+    MSG_LOG_FILE = log/adif/diamsg # (default: log/diamsg)
+    # LOG FORMAT DEFINITIONS
+    # 	0x000001 /** year format - YYYY */
+    # 	0x000002 /** date format - MMDD */
+    # 	0x000004 /** time format - hh:mm:ss */
+    # 	0x000008 /** millsecond format - .ms */
+    # 	0x000010 /** file line format - dir/file:line */
+    # 	0x000020 /** level format - [ERRO] */
+    # 	0x000040 /** domain format - [uxlib] */
+    # 	0x000080 /** thread safe format - ordered print */
+    #
+    # 	0x000100 /** limit filie size */
+    # 	0x000200 /** auto deleting file to be expired */
+    # 	0x000800 /** creating & using hour directory -./21 */
+    # 	0x001000 /** creating & using day directory - ./31 */
+    # 	0x002000 /** creating & using month directory - ./12 */
+    # 	0x004000 /** createing & using year directory -./2007 */
+    # 	0x008000 /** merging directories. - ./200712  */
+    #
+    # 	0x000000 /** None file extenstion.(updating one file per date) */
+    # 	0x010000 /** creating new file for a daty - YYYYMMDD */
+    # 	0x020000 /** creating new file for a week - Sun~Sat */
+    # 	0x030000 /** creating new file for a year - MMDD*/
+    # 	0x040000 /** creating new file for a month - 1~31 */
+    # 	0x050000 /** creating new file for a year - 1~365 */
+
+    ACTIVE_STANDBY = true # true or false (default: false)
+    CHECK_OTHERS = fasle # true or false (default: false)
+    MONITOR_CHANGING_CONF_IN_STANDBY = false # true or false (default: false)
+    HEARTBEAT_TIME = 1000 # msec (default: 1000)
+    STAT_SHM = ADIF_STAT # (default: ADIF_STAT)
+    STAT_TIME = 1 # sec (default: 5)
+
+    [ADIF/OUT_OF_SVC]
+    USE_OOS = false # true or false (default: false)
+    #MINIMUM_REQ_NUM = 1000 # (default: 1000)
+    #ERROR_RATE = 100 # (default: 100)
+    #ACTIVE_TIME = 100 # sec (default: 100)
+
     [UDIF/DIAMETER]
-    CONFIG = udia_conf.xml
+    CONFIG = adif-stack-conf.xml
+    BACKUP = # (default: $UASYS_HOME/data/udiaconfs/adif)
+
+    [UDIF/MSGQ]
+    PEER_MSGQ = # (default: NULL)
+    MAX_IPC_MSG_SIZE = 20480 # bytes (default: 20480)
 
     [UDIF/WORKER]
-    THREAD_COUNT = {{ .Values.configmaps.adifConf.sections.udifWorker.threadCount }}
-    USE_STACK_SESSION = FALSE
-    USE_STACK_ACTION = FALSE
-    USE_CHNL_SESSION = FALSE
-    USE_CHNL_ACTION = FALSE
-
-    [UDIF/CHANNEL]
-    THREAD_COUNT = 1
-    RECONNECT_TIME = 3
- 
-    [UDIF/CHANNEL/CONNECTIONS]
-    MY_DIAIB; 0; SERVER; 127.0.0.1; ; 30006;
- 
-    [UDIF/CHANNEL/PEERS]
-
-    [UDIF/PLUGIN]
-    libadifpxy-3.0.so; DYNAMIC; upxy_proxy_create;
-
-    [UDIF/TRACE]
-    TYPE = FILE
+    THREAD_COUNT = 0 # (default: 0)
+    USE_STACK_ACTION = false # true or false (default: true)
+    USE_STACK_SESSION = false # true or false (default: true)
+    USE_CHNL_ACTION = false # true or false (default: true)
+    USE_CHNL_SESSION = false # true or false (default: true)
 
     [UDIF/ACTION]
-    # action name; channel kind; command code; function name; dll name; channel info 
-    OFR;     STACK; 8388645; upxy_proxy_handle_stack_msg; libadifpxy-3.0.so; 
-    TFR;     STACK; 8388646; upxy_proxy_handle_stack_msg; libadifpxy-3.0.so; 
+    # action name; channel kind; command code; function name; dll name; channel info
+    OFR;     STACK; 8388645; upxy_proxy_handle_stack_msg; libadifpxy-3.0.so;
+    TFR;     STACK; 8388646; upxy_proxy_handle_stack_msg; libadifpxy-3.0.so;
 
-    [UDIF/PLUGIN/PROXY/COMMON]
+    [UDIF/CHANNEL]
+    #MAX_CHANNEL = 1 # (default: 64)
+    THREAD_COUNT = 4 # (default: 0)
+    #SO_BUF_SIZE = 20480 # (default: 0)
+    #DIRECT_SEND = false # true or false (default: false)
+    #DEL_WAIT_TIME = 60 # sec (default: 180)
+    RECONNECT_TIME = 2 # sec (default: 1)
+
+    [UDIF/CHANNEL/CONNECTIONS]
+    MY_DIAIB; 1; SERVER; 127.0.0.1; ; 30006;
+
+    [UDIF/CHANNEL/PEER]
+
+    [UDIF/PLUGIN]
+    # dll; mode; create module; command module; configuration 
+    libadifpxy-3.0.so; DYNAMIC; upxy_proxy_create;
+
     [UDIF/PLUGIN/PROXY/ROUTER/COMMON]
     ROUTE_SCHEME  = RULE # channel routing scheme [0:SESSID, 1:RULE, 2:SUBSID]
+    #DEFAULT_ROUTE =   #  default routing information
 
     [UDIF/PLUGIN/PROXY/ROUTER/RULE]
-    RULE_TFR;         ;           ;     ;       ; 8388645;    TRCID;   	MSISDN; POSTFIX; 1
+    #  key-type  : last key type [0:NO KEY, 1:TRCID=SUBSID, 2:SESSID, 3:AVPSTR, 4:AVPINT]
+    #  key-name  : key name (case key type = TRCID, [0:USERID, 1:MSISDN, 2:IMSI, 3:URI, 4:NAI, 5:PRIV, 6:IP, 7:IPV6])
+    #  rule-op   : route selecting operation [0:NOTHING, 1:HASHDIV, 2:EQUAL, 3:PREFIX, 4:POSTFIX, 5:HASSTR, 6:REGEXP]
+    #  name ; app-id  ; origi-host; peer; server; cmdcode; key-type; key-name; ruleop ; routes(chnl-ids)
+    RULE_OFR;         ;           ;     ;       ; 8388645;    TRCID;    MSISDN; POSTFIX; 1
+    RULE_TFR;         ;           ;     ;       ; 8388646;    TRCID;    MSISDN; POSTFIX; 1
 
     [UDIF/PLUGIN/PROXY/ROUTER/RULE/RULE_TFR/ROUTES]
     # key ; routes(chnlidx)
-    0 : 1, 2 
-    1 : 2, 1 
-    2 : 1, 2 
-    3 : 2, 1 
-    4 : 1, 2 
-    5 : 2, 1 
-    6 : 1, 2 
-    7 : 2, 1 
-    8 : 1, 2 
-    9 : 2, 1 
+    0 : 1, 2
+    1 : 2, 1
+    2 : 1, 2
+    3 : 2, 1
+    4 : 1, 2
+    5 : 2, 1
+    6 : 1, 2
+    7 : 2, 1
+    8 : 1, 2
+    9 : 2, 1
     default : 1, 2
- 
-  udia_conf.xml: |-
+
+    [UDIF/PLUGIN/PROXY/ROUTER/RULE/RULE_OFR/ROUTES]
+    # key ; routes(chnlidx)
+    0 : 1, 2
+    1 : 2, 1
+    2 : 1, 2
+    3 : 2, 1
+    4 : 1, 2
+    5 : 2, 1
+    6 : 1, 2
+    7 : 2, 1
+    8 : 1, 2
+    9 : 2, 1
+    default : 1, 2
+
+    [UDIF/PLUGIN/VPROXY/COMMON]
+    USE_MSG_VALIDATION = true # use msg validation. true or false. (default: false)
+    #USE_ROUTE_RECORD = false # use add Route-Record AVP. (default: false) 
+    #CHANGE_CHECK_PERIOD = 1000 # check period for changing configuration (default: 1000)
+    #ROUTE_MODE = RULE
+    #ROUTE_FILE =
+
+    [UDIF/PLUGIN/VPROXY/CHECKER]
+    LOG_PATH=$UASYS_HOME/log/status/adif/peer-status.log
+    PERIOD = 0 # (default: 0)
+    NOTI_ON = false # true or false (default:false)
+    LOG_ON = false # true or false (default:false)
+
+    [UDIF/PLUGIN/VPROXY/STATISTICS]
+    PATH=$UASYS_HOME/log/stats/adif
+    USE_REPORT_FILE=ON
+    PR_PEER_STATUS=ON
+    PR_PEER_MSCCRSLT_STAT=ON
+    PR_PERIODIC_KPI=ON
+    PR_IPCAN_KPI=ON
+    PR_CHANNEL_STATUS=ON
+
+    [UDIF/PLUGIN/VPROXY/TRACE]
+    USE_KEY_FILE=ON
+    KEY_FILE=$UCCMS_DATA_HOME/adif-tracekey.json
+
+    [UDIF/PLUGIN/VPROXY/ALARM_ECODE]
+
+    [UDIF/PLUGIN/VPROXY/CHANNEL/COMMON]
+    MAX_SERVER = 64 # max server
+    MAX_PEER = 256 # max peer
+    USE_OTRANSC = false # use channel outgoing transaction management. true or false (default: true)
+    RETRANS_COUNT = 0 # channel outgoing transaction retransmission count. (default: 0)
+    RETRANS_TIMEOUT = 3000 # channel outgoing transaction retransmission timeout. (default: 3000 msec)
+    REMOVE_WAIT_TIME = 5000 # dynamic accepted channel peer remove wait time. (default: 0 msec)
+
+    [UDIF/PLUGIN/VPROXY/CHANNEL/SERVERS]
+    # id; tptype; ip-addr(s); port; hostname; realm
+
+    [UDIF/PLUGIN/VPROXY/CHANNEL/PEERS]
+    # id; hostname; type; realm; tptype; ip-addr(s); port;
+
+    [UDIF/PLUGIN/VPROXY/ROUTER/META]
+
+    [UDIF/PLUGIN/VPROXY/ROUTER/RULES]
+
+    [UDIF/PLUGIN/VPROXY/ROUTER/ROUTES]
+
+  limiter.conf: |-
+    configuration {
+        limiters {
+            internal {
+                max-tps : 100
+            }
+        }
+    }
+
+  logger.conf: |-
+    loggers {
+        root {
+            level = "DEBUG"
+            appender = [
+                console
+            ]
+        } 
+        com.uangel.ulib {
+            level = "DEBUG"
+            appender = [
+                uccms-agent
+            ]
+        }
+        com.uangel.uccms-agent {
+            level = "DEBUG"
+            appender = [
+                uccms-agent
+            ]
+        }
+    }
+
+    appenders {
+        console {
+            format = "text"
+            class = "Console"
+            print-caller = true
+        }
+        uccms-agent {
+            format = "ulib.text"
+            class = "RollingFile"
+            file = /tmp/log/uccms-agent/agent.log
+            print-caller = false
+            file-name-pattern = /tmp/log/uccms-agent/agent.log.%Y%m%d"
+        }
+    }
+
+  org-adif-stack-conf.xml: |-
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE configuration SYSTEM "configuration.dtd">
 
     <udiameter>
-    	<general>
-    		<option>
-    			<use_ipv6>{{ .Values.configmaps.udiaConfXml.useIp6 }}</use_ipv6>
-    			<use_duplicate_detect>no</use_duplicate_detect>
-    			<use_loop_detect>yes</use_loop_detect>
-    			<use_loop_avoidance>yes</use_loop_avoidance>
-    			<check_cer_ip>yes</check_cer_ip>
-    			<check_tport_ip>no</check_tport_ip>
-    			<check_dest_host>no</check_dest_host>
-    		</option>
-    	</general>
-    	<dictionary>
-    		<file>$UASYS_HOME/data/dict/dict_common.xml</file>
-    		<file>$UASYS_HOME/data/dict/dict_ietf_avps.xml</file>
-    		<file>$UASYS_HOME/data/dict/dict_ietf_base_RFC6733.xml</file>
-    		<file>$UASYS_HOME/data/dict/dict_etsi_avps.xml</file>
-    		<file>$UASYS_HOME/data/dict/dict_3gpp_avps.xml</file>
-    		<file>$UASYS_HOME/data/dict/dict_3gpp_sgd.xml</file>
-    	</dictionary>
-    	<server id="0" hostname="smsf.uangel.com" realm="uangel.com" default="yes">
-    		<option>
-    			<use_ipv6>no</use_ipv6>
-    			<use_duplicate_detect>yes</use_duplicate_detect>
-    		</option>
-    		<parser>
-    			<version>1</version>
-    		</parser>
-    		<timer>
-    			<tw_timer>2800000</tw_timer>
-    			<tq_timer>1000</tq_timer>
-    			<te_timer>2500</te_timer>
-    			<orq_retrans_count>0</orq_retrans_count>
-    		</timer>
-    		<capability>
-    			<product_name>UANGEL DIAMETER</product_name>
-    			<vendor_id>11858</vendor_id>
-    			<supported_vendor_id>0</supported_vendor_id>
-    			<supported_vendor_id>10415</supported_vendor_id>
-    			<supported_vendor_id>14389</supported_vendor_id>
-    			<auth_application_id>4</auth_application_id>
-    			<acct_application_id>3</acct_application_id>
-    			<vendor_specific_application_id>
-    				<vendor_id>10415</vendor_id>
-    				<auth_application_id>16777313</auth_application_id>
-    			</vendor_specific_application_id>
-    			<vendor_specific_application_id>
-    				<vendor_id>10415</vendor_id>
-    				<auth_application_id>16777216</auth_application_id>
-    			</vendor_specific_application_id>
-    			<vendor_specific_application_id>
-    				<vendor_id>10415</vendor_id>
-    				<acct_application_id>16777312</acct_application_id>
-    			</vendor_specific_application_id>
-    			<vendor_specific_application_id>
-    				<vendor_id>10415</vendor_id>
-    				<auth_application_id>16777311</auth_application_id>
-    			</vendor_specific_application_id>
-    			<host_ip_address>192.168.5.18</host_ip_address>
-    		</capability>
-    		<transport type="tcp" port="3868"/>
-    		<transport type="sctp" port="3869"/>
-    	</server>
-    	<peer id="0" hostname="smsc.kt.com" server="smsf.uangel.com">
-    		<disable>no</disable>
-    		<transport type="tcp" port="3968" way="SERVER" address={{ .Values.global.smscSim.clusterIP | quote }}>
-    		</transport>
-    	</peer>
-    	<route id="0" realm="kt.com" server="smsf.uangel.com" default="no">
-    		<approute application_id="16777313" role="LOCAL">
-    			<peerroute peer="smsc.kt.com"/>
-    		</approute>
-    		<approute application_id="0" role="LOCAL" default="yes">
-            </approute>
-    	</route>
-    	<route id="2" realm="uangel.com" server="smsf.uangel.com" default="no">
-    		<approute application_id="16777313" role="LOCAL">
-    		</approute>
-    		<approute application_id="0" role="LOCAL" default="yes">
-    		</approute>
-    	</route>
-    </udiameter>
+        <general>
+            <thread_count>2</thread_count>
+            <max_server>64</max_server>
+            <max_peer>1024</max_peer>
+            <!--peer_limit>256</peer_limit-->
+            <max_route>1024</max_route>
+            <option>
+                <use_ipv6>no</use_ipv6>
+                <recv_msg_max_avail_size>1048576</recv_msg_max_avail_size>
+            </option>
+            <parser>
+                <version>1</version>
+            </parser>
+            <timer>
+                <tw_timer>5000</tw_timer>
+                <!--tc_timer>18000</tc_timer-->
+                <tq_timer>1000</tq_timer>
+                <te_timer>2500</te_timer>
+            </timer>
+        </general>
+        <dictionary>
+            <file>$UASYS_HOME/data/dict/dict_common.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_ietf_avps.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_avps.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_etsi_avps.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_ietf_base_RFC6733.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_ietf_base_acr_RFC6733.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_ietf_nas_RFC4005.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_uangel_avps.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_uangel.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_CxDx_TS29229.xml</file>
+            <file>$UASYS_HOME/data//dict/dict_3gpp_sgd.xml</file>
+            <!--file>$UASYS_HOME/data/dict/dict_telkomsel.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_Ro_TS32299.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_Sh_TS29329.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_Sy_TS29219.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_S9_TS29215.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_S6a_S6d_TS29272.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_S13_TS29272.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_S6b_TS29273.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_Gx_TS29212.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_Gxx_TS29212.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_Sd_TS29212.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_Rx_TS29214.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_3gpp_Zh_TS29109.xml</file>
+            <file>$UASYS_HOME/data/dict/dict_tksel_customized.xml</file-->
+        </dictionary>
+
+  uccms-agent.conf: |-
+    modules = [
+        echolib.Defaults
+        echolib.StartAllServer
+        ulib.Defaults
+        ulib.LimiterConfigurator
+
+        agent.EventListener
+        agent.EventListenerService
+        agent.AgentService
+    ]
+
+    runtime.proc-name = "uccms-agent"
+    logrus {
+        config-file = /tmp/usmsf-adif-conf/logger.conf
+        watch-config = true
+    }
+
+
+    #limiter.config-file = /tmp/usmsf-adif-conf/limiter.conf
+
+    apiServicePool {
+        type = alarmPool
+        pool-size = 10
+        max-queueing-duration = 2s
+    }
+
+    http-servers {
+        event-listener {
+            host = ${?UCCMS_AGENT_HOST} 
+            port = ${?UCCMS_AGENT_PORT}
+            api-uri = /uccms-agent/v1/notifications # agent-specific
+
+            tls = false
+            serve-for = internal        
+            # metric-registry = mgmt        
+            exec-context = apiServicePool
+            request-timeout = 2s        
+            limiter = internal
+            #callback-info=${?UCCMS_AGENT_CALLBACK}
+        }
+    }
+
+    agent-service {
+        uccms {
+            host = "usmsf-uccms.{{ .Release.Namespace }}.svc.{{ .Values.global.dnsName.zone }}"
+            port = 9090
+            apiUri = /uccms/v1
+            tls = false
+        }
+
+        heartbeat-interval = 2s
+        heartbeat-max-retries = 5
+        cmd-configurations = [
+            {
+                conf_name = mon_adif_stack_conf
+                conf_id = 732b5ba1-722d-4ba6-ac4b-861ae23d64ca
+                update-mode = link-backup
+                link_file = ${?UCCMS_DATA_HOME}/adif-stack-conf.json
+                backup_path = ${?UCCMS_DATA_HOME}/backup
+            },
+            {
+                conf_name = mon_adif_tracekey
+                conf_id = 55c265ef-8081-40cc-8e57-9110bc3573c2
+                update-mode = link-backup
+                link_file = ${?UCCMS_DATA_HOME}/adif-tracekey.json
+                backup_path = ${?UCCMS_DATA_HOME}/backup
+            },
+            {
+                conf_name = mon_adif_loglvl
+                conf_id = bfd1881e-5ab3-49a5-971e-9d52b2d223e3
+                update-mode = link-backup
+                link_file = ${?UCCMS_DATA_HOME}/adif-loglvl.json
+                backup_path = ${?UCCMS_DATA_HOME}/backup
+            }
+        ]
+    }

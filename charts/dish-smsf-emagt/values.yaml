@@ -12,7 +12,16 @@ deployment:
     emagt:
       #image: camel.uangel.com:5000/emagt:v050
       image: camel.uangel.com:5000/emagt:latest
-      imagePullPolicy: IfNotPresent
+      imagePullPolicy: Always
+
+      resources: 
+        limits:
+          cpu: 2000m
+          memory: 2048Mi
+        requests:
+          cpu: 2000m
+          memory: 2048Mi
+
 
 service:
   emagt:
@@ -21,8 +30,8 @@ service:
     name: "emagt"
     ports:
       httpPm:
-        port: 8080
-        targetPort: 8080
+        port: 9090
+        targetPort: 9090
   emagtWs:
     # type: "ClusterIP", "NodePort", "LoadBalancer", ...
     type: "NodePort"
@@ -49,17 +58,8 @@ ingress: {}
 #  #    hosts:
 #  #      - chart-example.local
 
-resources: 
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  limits:
-    cpu: 2000m
-    memory: 2048Mi
-  requests:
-    cpu: 2000m
-    memory: 2048Mi
+#imagePullSecrets:
+#- name: harbor-secret
 
 nodeSelector: {}
 

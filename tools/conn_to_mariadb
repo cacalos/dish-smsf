@@ -1,0 +1,6 @@
+#!/bin/bash
+
+./conn_to_svc_container umariadb-0 mariadb bash
+
+#bash
+#mysql -uroot -proot.123 smsf

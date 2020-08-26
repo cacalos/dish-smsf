@@ -2,16 +2,22 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: {{ .Values.global.serviceName.dia }}
-  labels:
-    app: {{ .Values.global.serviceName.dia }}
+  name: {{ .Values.global.serviceName.dia_hasvc }}
+  annotations:
+    uangel.com/as-stateful-set: {{ .Values.global.serviceName.dia }}
 spec:
-  type: ClusterIP
+  #type: {{ .Values.service.type | default "ClusterIP" }}
+  clusterIP: None
   ports:
-  - port: {{ .Values.global.port.dia.container }}
-    name: http-nfserver
-  - port: {{ .Values.global.port.dia.forSMSC }}
-    name: diameter
+  - name: diameter
+    port: {{ .Values.global.port.dia.forSMSC }}
+  - name: http-nfserver
+    port: {{ .Values.global.port.dia.container }}
+    targetPort: 8080
+    {{- if (eq .Values.service.type "NodePort") }}
+    nodePort: {{ .Values.service.nodePort }}
+    {{- end }}
   selector:
-      app: usmsf-adif
+    app: usmsf-adif
+    statefulset.kubernetes.io/pod-name: {{ .Values.global.serviceName.dia }}-0
 

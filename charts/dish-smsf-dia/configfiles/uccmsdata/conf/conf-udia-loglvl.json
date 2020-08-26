@@ -1,0 +1,12 @@
+{
+	"logs" : [
+		{
+			"name":"DIAMSG",
+			"level":"MAJ"
+		},
+		{
+			"name":"ADIF",
+			"level":"INFO"
+		}
+	]
+}

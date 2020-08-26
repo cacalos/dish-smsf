@@ -17,10 +17,29 @@ deployment:
   containers:
     usmsf:
       image: camel.uangel.com:5000/usmsf:latest
+      #image: camel.uangel.com:5000/usmsf:ph3_test
       imagePullPolicy: Always
       # useManualStart: "true"인 경우 해당 container를 자동으로 기동시키지 않는다. (default: "false")
       useManualStart: false
-
+      healthCheck:
+        liveness:
+          #sendProbe: true
+          sendProbe: false
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readiness:
+          #sendProbe: true
+          sendProbe: false
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      resources:
+        limits:
+          cpu: 2000m
+          memory: 4096M
+        requests:
+          cpu: 2000m
+          memory: 2048M
+        
     redisServer:
       image: camel.uangel.com:5000/svc_redis:latest
       imagePullPolicy: Always
@@ -35,27 +54,25 @@ deployment:
       name: "shared-data"
     log:
       name: "log-volume"
-    secret:
-      accessTokenCheck:
-        name: "access-token-check-secret"
 
 service:
+  annotations:
+    aws:
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+      service.beta.kubernetes.io/aws-load-balancer-internal: 0.0.0.0/0
   #type: "LoadBalancer"
   #type: "ClusterIP"
   type: "NodePort"
   ports:
     httpNFServer:
-      nodePort: 30081
+      #nodePort: 30081
+      nodePort: 31081
     httpsNFServer:
-      nodePort: 30082
+      #nodePort: 30082
+      nodePort: 31082
 
-#resources:
-  limits:
-    cpu: 2000m
-    memory: 4096M
-  requests:
-    cpu: 2000m
-    memory: 2048M
+#imagePullSecrets:
+#- name: harbor-secret
 
 secret:
   name:
@@ -65,6 +82,7 @@ configmap:
   name: "usmsf-conf"
 
   usmsfConf:
+    usePprof: false
 
     # true:  NRF와 NF Discovery 연동 없이 "nrf-local-config"에 설정된 NF profile을 사용한다.
     # false: NRF와 NF Discovery 연동을 통해 NF profile을 얻은 후 이 값을 사용한다.
@@ -76,10 +94,58 @@ configmap:
     oauthTokenScheme: use_nrf_token
 
     # NF로부터 받은 요청 메시지 내 access token 검사 여부
-    shouldCheckAccessToken: true
+    #shouldCheckAccessToken: true
 
     # true로 설정 시, H2C 사용
     useH2C: false
+
+    useUccmsClient: false
+
+    # true로 설정 시, Liveness/Readiness probe 처리 기능 활성화
+    useHealthCheck: false
+
+    timer:
+      internalRouter:
+        serviceRequestTimeout: 2s
+      scpClient:
+        discoveredCacheKeepingTime: 10m
+        serviceRequestTimeout: 10s
+
+    healthCheck:
+      # kubelet으로부터 liveness/readiness probe 요청을 수신할 포트
+      listenPort: 18080
+
+      livenessCheck:
+
+        # true인 경우에만 liveness checker 동작
+        enabled: true
+
+        # true:  백그라운드에서 주기적으로 liveness 검사 (주기: asyncCheckInterval)
+        # false: kubelet으로부터 liveness probe 수신 시에만 liveness 검사
+        useAsyncCheck: false
+
+        # useAsyncCheck=true인 경우에만 유효
+        asyncCheckInterval: 10s
+
+       # Probe에 대한 응답을 강제로 특정 값으로 설정하도록 시뮬레이션하고자 할 때 사용
+        simulationMode:
+
+          # true: 시뮬레이션 모드로 동작, false: 일반 모드로 동작
+          enabled: false
+
+          # true: 에러로 응답, false: 성공으로 응답
+          returnError: true
+
+      readinessCheck:
+
+        # 각 필드 설명은 livenessCheck 참조
+
+        enabled: false
+        useAsyncCheck: false
+        asyncCheckInterval: 5s
+        simulationMode:
+          enabled: false
+          returnError: true
 
     nfServer:
       scheme:
@@ -88,8 +154,6 @@ configmap:
       https:
         idleTimeout: "100s"
     mariaDB:
-      serverURI:
-        port: 3306
       dbname: "smsf"
       user: "root"
       pwd: "root.123"
@@ -98,15 +162,33 @@ configmap:
       user: "root"
       pwd: "root.123"
     redis:
-      serverURI: "localhost:6379"
+      localStore:
+        serverURI: "localhost:6379"
+        pingInterval: "1m"
+        keyExpireTimeout: "12h"
+      pubSub:
+        serverURI: "localhost:6379"
+        pingInterval: "1m"
     nrfClientForRegister:
       uri: "http://192.168.7.180:32222"
     nrfClientForDiscovery:
       uri: "http://192.168.7.180:32222"
     logger:
       logLevels:
-        root: "DEBUG"
-        com_uangel: "DEBUG"
+        root: "ERROR"
+        com_uangel: "ERROR"
+        samsung:
+          fault: "ERROR"
+          selfdiag: "ERROR"
+          reset: "ERROR"
+          init: "ERROR"
+          console: "ERROR"
+          error: "ERROR"
+          event: "ERROR"
+          info: "ERROR"
     trace:
       onoff: "true"
+    metric:
+      nf:
+        reportInterval: 1s
 

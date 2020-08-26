@@ -1,0 +1,155 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.names.uccmsConf }}
+  namespace: {{ .Release.Namespace }}
+data:
+  conf-udia-loglvl.json: |-
+    {
+        "logs" : [
+            {
+                "name":"DIAMSG",
+                "level":"MAJ"
+            },
+            {
+                "name":"ADIF",
+                "level":"INFO"
+            }
+        ]
+    }
+
+  conf-udia-stack.json: |-
+    {
+        "udiameter": {
+            "server": [
+                {
+                    "@id": 1,
+                    "@hostname": "vsmsf.uangel.com",
+                    "@realm": "uangel.com",
+                    "@default": "yes",
+                    "option": {
+                        "use_ipv6": "no",
+                        "use_duplicate_detect": "yes",
+                        "check_cer_ip": "no",
+                        "check_tport_ip": "no",
+                        "check_dest_host": "no",
+                        "ignore_retrans": "no",
+                        "ignore_incoming_policy": "yes",
+                        "use_new_hop_id_in_oreq": "no",
+                        "stop_peer_when_dpr_reboot": "no",
+                        "stop_peer_when_dpr_busy": "no",
+                        "immediate_reply_when_fail": "no",
+                        "reconnect_max": 0,
+                        "send_timeout": 1000,
+                        "recv_msg_check_size": 0
+                    },
+                    "parser": {
+                        "version": "1",
+                        "no_check_header_flag": "no",
+                        "check_unknown_cmd": "no",
+                        "check_unknown_avp": "no",
+                        "check_mandatory_avp_length": "no",
+                        "check_empty_group": "no",
+                        "check_avprule": "no",
+                        "check_required_length": "no"
+                    },
+                    "timer": {
+                        "tw_timer": 10000,
+                        "tc_timer": 5000,
+                        "tq_timer": 3000,
+                        "te_timer": 25000
+                    },
+                    "capability": {
+                        "product_name": "UANGEL DIAMETER",
+                        "vendor_id": 11857,
+                        "supported_vendor_id": [
+                            0,
+                            5806,
+                            10415,
+                            14389,
+                            15930
+                        ],
+                        "auth_application_id": [
+                            4294967295,
+                            4,
+                            16777251
+                        ],
+                        "acct_application_id": [
+                            4294967295,
+                            3
+                        ],
+                        "vendor_specific_application_id": [
+                            {
+                                "vendor_id": 14389,
+                                "auth_application_id": 1673
+                            },
+                            {
+                                "vendor_id": 10415,
+                                "auth_application_id": 16777251
+                            }
+                        ],
+                        "inband_security_id": 1,
+                        "host_ip_address": [
+                            "192.168.5.18"
+                        ]
+                    },
+                    "transport": [
+                        {
+                            "@type": "tcp",
+                            "@port": 3868
+                        },
+                        {
+                            "@type": "tcp",
+                            "@port": 3869
+                        }
+                    ]
+                }
+            ],
+            "peer": [
+                {
+                    "@id": 0,
+                    "@hostname": "smsc.kt.com",
+                    "@server": "vsmsf.uangel.com",
+                    "disable": "no",
+                    "transport": [
+                        {
+                            "@type": "tcp",
+                            "@port": 3968,
+                            "@way": "SERVER",
+                            "@address": "10.105.51.100"
+                        }
+                    ]
+                },
+                {
+                    "@id": 1,
+                    "@hostname": "hss2.uangel.com",
+                    "@server": "vsmsf.uangel.com",
+                    "disable": "no",
+                    "transport": [
+                        {
+                            "@type": "tcp",
+                            "@port": 4121,
+                            "@way": "CLIENT",
+                            "@address": "10.0.2.15"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+  conf-udia-tracekey.json: |-
+    {
+        "keys": [
+            {
+                "key" : "nrf.uangel.com",
+                "expire" : "2020-08-02T15:04:05+09:00",
+                "level" : 31 
+            },
+            {
+                "key" : "imsi-000100101111",
+                "expire" : "2020-08-02T15:04:05+09:00",
+                "level" : 31 
+            }
+        ]
+    }

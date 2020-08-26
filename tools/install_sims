@@ -1,0 +1,5 @@
+#!/bin/bash
+
+./uninstall_sims
+
+helm install smsf-sims ./dish-smsf-sims --namespace coredev-usmsf-sim

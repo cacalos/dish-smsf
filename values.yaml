@@ -1,12 +1,28 @@
 global:
+  # AWS, GCP, SCP, ...
+  cloudPlatform: AWS
+  aws:
+    dbEndPoint: "hong-db.c2teww4mkk5s.ap-northeast-2.rds.amazonaws.com"
+  usePrometheus: true
   nfType: "SMSF"
+
+  commonLabels:
+    product: "smsf"
+    vendor: "uangel"
+
   serviceName:
     svc: "usmsf-svc"
+    map: "usmsf-map-svc"
     dia: "usmsf-dia-svc"
+    dia_hasvc: "ua-hasvc"
     mariadb: "umariadb"
     uccms: "usmsf-uccms"
     emagt: "emagt"
   port:
+    db:
+      mariadb: 3306
+    map:
+      container: 8080
     dia:
       container: 8080
       forSMSC: 3868
@@ -23,15 +39,14 @@ global:
     ipaddr:
       expose:
         svc:
-          ipv4: "192.168.7.180"
-          ipv4ForExternalIP: "192.168.7.180"
+          ipv4: ""
+          ipv4ForExternalIP: ""
         nrfClient:
           ipv4: ""
           ipv4ForExternalIP: ""
     serverPort:
       forNFServer:
         http: 8001
-        #http: 80
         https: 8002
       forInternal:
         http: 8011
@@ -43,8 +58,11 @@ global:
   dnsName:
     #zone: "5gsamsung.local"
     zone: "cluster.local"
-  #nodeName: "k8s-worker01"
-  nodeName: "iot-02"
+  #nodeName: "iot-02"
   smscSim:
     clusterIP: "10.100.176.200"
+
+  # Set to "" to not set timezone
   timezone: "Asia/Seoul"
+
+  simNamespace: "coredev-usmsf-sim"

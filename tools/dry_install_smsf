@@ -1,0 +1,4 @@
+#!/bin/bash
+
+helm install usmsf dish-smsf -f ./overriding-values.yaml --namespace coredev-usmsf --debug --dry-run
+

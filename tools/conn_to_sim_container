@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ $# -ne 2 ]; then
+    echo "Usage: $(basename $0) <pod> <container>"
+    exit 1
+fi
+
+pod="$1"
+container="$2"
+
+./conn_to_container coredev-usmsf-sim "$pod" "$container" sh
+#kubectl exec -it "$pod" -c "$container" -n coredev-usmsf-sim -- sh
+

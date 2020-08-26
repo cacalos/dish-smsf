@@ -1,0 +1,595 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configmap.names.uccmsMeta }}
+  namespace: {{ .Release.Namespace }}
+data:
+  meta-udia-loglvl.json: |-
+    {
+        "id": "4a6331b8-d065-11ea-87d0-0242ac130003",
+        "info": {
+            "serviceName": "UDIA_LOGLVL",
+            "configName": "loglvl",
+            "version": "v1.0",
+            "descrpiption": "DIAMETER log level configuration"
+        },
+        "definitions": {
+            "logs" : {
+                "schema": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name" : {
+                                "type" : "string",
+                                "description" : "LOG name",
+                                "default" : ""
+                            },
+                            "level" : {
+                                "type" : "string",
+                                "enum": [
+                                    "CRT",
+                                    "MAJ",
+                                    "MIN",
+                                    "ERR",
+                                    "INFO",
+                                    "DBG",
+                                    "DBG2",
+                                    "DETAIL"
+                                ],
+                                "default" : "INFO"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+  meta-udia-stack.json: |-
+    {
+        "id": "2d21e284-d065-11ea-87d0-0242ac130003",
+        "info": {
+            "serviceName": "DIA_INFO",
+            "configName": "SERVER_INFO",
+            "version": "v1.0",
+            "description": "FE 의 diameter stack 의 server info",
+            "validatorUrl": "0.0.0.0:23090/validate"
+        },
+        "components": {
+            "schemas": {
+                "bool_yesno": {
+                    "type": "string",
+                    "enum": [
+                        "no",
+                        "yes"
+                    ]
+                },
+                "confinteger": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "tport_way": {
+                    "type": "string",
+                    "enum": [
+                        "SERVER",
+                        "CLIENT",
+                        "BOTH"
+                    ]
+                },
+                "tport_type": {
+                    "type": "string",
+                    "enum": [
+                        "tcp",
+                        "udp",
+                        "sctp",
+                        "tls"
+                    ]
+                },
+                "array_number": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "array_string": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "address": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "-port": {
+                                "type": "number"
+                            },
+                            "-address": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "server_option": {
+                    "type": "object",
+                    "description": "server option",
+                    "properties": {
+                        "use_ipv6": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "IPv6 주소를 사용할 것인지 여부 (default: no)"
+                        },
+                        "use_duplicate_detect": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "yes",
+                            "description": "transaction 기반 duplicate detection 기능 사용 여부 (default: yes)"
+                        },
+                        "use_loop_detect": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "yes",
+                            "description": "agent loop detection 기능 사용 여부 (default: yes)"
+                        },
+                        "use_loop_avoidance": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "agent loop avoidance 기능 사용 여부 (default: no)"
+                        },
+                        "check_cer_ip": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "peer의 CER내 IP 주소를 검사할지 여부 (default: no)"
+                        },
+                        "check_tport_ip": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "peer transport의 IP 주소를 검사할지 여부 (default: no)"
+                        },
+                        "check_dest_host": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "인입된 메시지의 dest-host를 확인할지 여부 (default: no)"
+                        },
+                        "check_sec_id": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "인입된 CER 메시지의 Security-ID 확인할지 여부 (default: no)"
+                        },
+                        "ignore_retrans": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "retrans 메시지 인입을 거부할지 여부 (default: no)"
+                        },
+                        "ignore_incoming_policy": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "인입된 메시지의 incoming policy를 사용하지 않고 무시할지 여부 (default: no)"
+                        },
+                        "use_new_hop_id_in_oreq": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "outgoing transaction의 hop-id를 새로 생성해 사용할지 여부 (default: no)"
+                        },
+                        "stop_peer_when_dpr_reboot": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "DPR REBOOTING 메시지에 대해 peer를 stop할지 여부 (default : no)"
+                        },
+                        "stop_peer_when_dpr_busy": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "DPR BUSY 메시지에 대해 peer를 stop할지 여부 (default: no)"
+                        },
+                        "immediate_reply_when_fail": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "request send 실패 시 즉시 응답을 할지 여부 (default: no)"
+                        },
+                        "manual_redirect": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "사용자가 직접 redirect를 처리 할지 여부 (default: no)"
+                        },
+                        "reconnect_max": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 0,
+                            "description": "PEER 재 연결 최대 시도 회수 (default: 0[무제한])"
+                        },
+                        "max_retrans_count": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 1,
+                            "description": "최대 request 재전송 회수 (tc_timer와 관련) (default: 1)"
+                        },
+                        "dwr_retrans_count": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 1,
+                            "description": "최대 DWR 재전송 회수 (default: max_retrans_count 값)"
+                        },
+                        "send_timeout": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 1000,
+                            "description": "send timeout (default: 1000 msec)"
+                        },
+                        "max_send_queue_count": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 2048,
+                            "description": "maximum send queue count - optional(default: 2048)"
+                        },
+                        "recv_msg_check_size": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 0,
+                            "description": "receive message check size - optional(default: 0[체크하지 않음])"
+                        },
+                        "loop_detect_result": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 3005,
+                            "description": "loop detect 시 반환할 result code (default: 3005(LOOP_DETECT))"
+                        },
+                        "loop_avoidance_result": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 3002,
+                            "description": "loop avoidance 시 반환할  result code (default: 3002(UNABLE_TO_DELIVER)"
+                        },
+                        "max_redirect_session": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 0,
+                            "description": "redirect session의 최대 값 - 이 이상 되면 cache 되지 않는다 (default: 0)"
+                        },
+                        "max_redirect_realm": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 64,
+                            "description": "redirect realm의 최대 값 - 이 이상 되면 cache 되지 않는다 (default: 64)"
+                        },
+                        "max_redirect_realmapp": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 256,
+                            "description": "redirect realm and app의 최대 값 - 이 이상 되면 cache 되지 않는다 (default: 256)"
+                        },
+                        "max_redirect_app": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 64,
+                            "description": "redirect app의 최대 값 - 이 이상 되면 cache 되지 않는다 (default: 64)"
+                        },
+                        "max_redirect_host": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 256,
+                            "description": "redirect app의 최대 값 - 이 이상 되면 cache 되지 않는다 (default: 256)"
+                        },
+                        "max_redirect_user": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 0,
+                            "description": "redirect user session 최대 값 - 이 이상 되면 cache 되지 않는다 (default: 0)"
+                        }
+                    }
+                },
+                "parser": {
+                    "type": "object",
+                    "description": "server parsing option",
+                    "properties": {
+                        "version": {
+                            "type": "string",
+                            "default": "1",
+                            "description": "DIAMETER message version - optional(default:1)"
+                        },
+                        "no_check_header_flag": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "DIAMETER Message Header Flag bits 값 오류를 체크하지 않는다. (default: no)"
+                        },
+                        "check_unknown_cmd": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "Unknown command 전달되었음을 체크할 것인지 여부 (default: no)"
+                        },
+                        "check_unknown_avp": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "Unknown AVP가 전달되었음 체크할 것인지 여부 (default: no)"
+                        },
+                        "check_mandatory_avp_length": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "Mandatory AVP의 길이가 0인지 체크할것인지 여부 (default: no)"
+                        },
+                        "check_empty_group": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "group이 empty일 경우 에러를 발생시킬 것인지 여부 (default: no)"
+                        },
+                        "check_avprule": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "avp rule을 사용해 avplist를 검증할 것인지 여부 (default: no)"
+                        },
+                        "check_required_length": {
+                            "$ref": "#/components/schemas/bool_yesno",
+                            "default": "no",
+                            "description": "required AVP의 길이가 0인지 체크할것인지 여부 (default : no)"
+                        }
+                    }
+                },
+                "timer": {
+                    "type": "object",
+                    "description": "server timer option",
+                    "properties": {
+                        "tq_timer": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 1000,
+                            "description": "RETRANS-INTERVAL, 이 시간안에 응답 오지 않을 경우 메시지 재전송. 단위 msec. (default: 1000)"
+                        },
+                        "tc_timer": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 3000,
+                            "description": "PEER 연결 종료 후, 이 시간 이후 재연결을 시도한다. 단위 msec. (default: 3000)"
+                        },
+                        "tw_timer": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 3000,
+                            "description": "이 간격을 주기로 Peer와 DWR을 주고 받는다. 단위 msec. (default: 3000)"
+                        },
+                        "te_timer": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 3000,
+                            "description": "transaction expire, 이 시간 이후에 transaction 종료. 단위 msec. (default: 4000)"
+                        }
+                    }
+                },
+                "capability": {
+                    "type": "object",
+                    "description": "server capability option",
+                    "properties": {
+                        "product_name": {
+                            "type": "string",
+                            "default": "UANGEL DIAMETER",
+                            "description": "DIAMETER Product Name (default: 'UANGEL DIAMETER')"
+                        },
+                        "vendor_id": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 11858,
+                            "minProperties": 1,
+                            "description": "DIAMETER Vendor ID (default: 11858[UANGEL])"
+                        },
+                        "firmware_revsion": {
+                            "$ref": "#/components/schemas/confinteger",
+                            "default": 0,
+                            "description": "DIAMETER Firmware Revision (default: 0)"
+                        },
+                        "supported_vendor_id": {
+                            "$ref": "#/components/schemas/array_number",
+                            "description": "Supported-Vendor-ID AVP 값 (다중 선언 값)"
+                        },
+                        "auth_application_id": {
+                            "$ref": "#/components/schemas/array_number",
+                            "description": "Auth-Application-ID AVP 값 (다중 선언 값)"
+                        },
+                        "acct_application_id": {
+                            "$ref": "#/components/schemas/array_number",
+                            "description": "Acct-Application-ID AVP 값 (다중 선언 값)"
+                        },
+                        "vendor_specific_application_id": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "vendor_id": {
+                                        "type": "number"
+                                    },
+                                    "auth_application_id": {
+                                        "$ref": "#/components/schemas/confinteger",
+                                        "description": "Auth-Application-ID AVP 값 (다중 선언 값)"
+                                    },
+                                    "acct_application_id": {
+                                        "$ref": "#/components/schemas/confinteger",
+                                        "description": "Acct-Application-ID AVP 값 (다중 선언 값)"
+                                    }
+                                }
+                            }
+                        },
+                        "inband_security_id": {
+                            "type": "number",
+                            "description": "inband security id"
+                        },
+                        "host_ip_address": {
+                            "$ref": "#/components/schemas/array_string",
+                            "description": "host ip address"
+                        }
+                    }
+                },
+                "transport": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "-type": {
+                                "$ref": "#/components/schemas/tport_type"
+                            },
+                            "-port": {
+                                "type": "number"
+                            },
+                            "-way": {
+                                "$ref": "#/components/schemas/tport_way"
+                            },
+                            "-address": {
+                                "type": "string"
+                            },
+                            "-bindport": {
+                                "type": "number"
+                            },
+                            "address": {
+                                "$ref": "#/components/schemas/address"
+                            },
+                            "bind": {
+                                "$ref": "#/components/schemas/address"
+                            },
+                            "tpopt": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "-name": {
+                                            "type": "string"
+                                        },
+                                        "-value": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "required": [
+                            "-type",
+                            "-port"
+                        ]
+                    }
+                }
+            },
+            "attributes": {
+                "server_list": {
+                    "schema": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "-id": {
+                                    "$ref": "#/components/schemas/confinteger"
+                                },
+                                "-hostname": {
+                                    "type": "string"
+                                },
+                                "-realm": {
+                                    "type": "string"
+                                },
+                                "-default": {
+                                    "$ref": "#/components/schemas/bool_yesno"
+                                },
+                                "option": {
+                                    "$ref": "#/components/schemas/server_option"
+                                },
+                                "parser": {
+                                    "$ref": "#/components/schemas/parser"
+                                },
+                                "timer": {
+                                    "$ref": "#/components/schemas/timer"
+                                },
+                                "capability": {
+                                    "$ref": "#/components/schemas/capability"
+                                },
+                                "transport": {
+                                    "$ref": "#/components/schemas/transport"
+                                }
+                            },
+                            "required": [
+                                "-id",
+                                "-hostname"
+                            ]
+                        }
+                    }
+                },
+                "peer_list": {
+                    "schema": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "-id": {
+                                    "$ref": "#/components/schemas/confinteger"
+                                },
+                                "-hostname": {
+                                    "type": "string"
+                                },
+                                "-server": {
+                                    "type": "string"
+                                },
+                                "disable": {
+                                    "$ref": "#/components/schemas/bool_yesno"
+                                },
+                                "transport": {
+                                    "$ref": "#/components/schemas/transport"
+                                }
+                            },
+                            "required": [
+                                "-id",
+                                "-hostname"
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "definitions": {
+            "udiameter": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "server": {
+                            "schema": {
+                                "$ref": "#/components/attributes/server_list"
+                            }
+                        },
+                        "peer": {
+                            "schema": {
+                                "$ref": "#/components/attributes/peer_list"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+  meta-udia-tracekey.json: |-
+    {
+        "id": "5699ea26-d065-11ea-87d0-0242ac130003",
+        "info": {
+            "serviceName": "UDIA_TRACE",
+            "configName": "tracekey",
+            "version": "v1.0",
+            "descrpiption": "DIAMETER trace key configuration"
+        },
+        "definitions": {
+            "keys" : {
+                "schema": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "key" : {
+                                "type" : "string",
+                                "description" : "trace key value",
+                                "default" : ""
+                            },
+                            "peer" : {
+                                "type" : "string",
+                                "description" : "DIAMETER peer name",
+                                "default" : ""
+                            },
+                            "server" : {
+                                "type" : "string",
+                                "description" : "DIAMETER server name",
+                                "default" : ""
+                            },
+                            "appid" : {
+                                "type" : "integer",
+                                "description" : "application id",
+                                "default" : 0
+                            },
+                            "expire" : {
+                                "type" : "string",
+                                "description" : "trace expire time"
+                            },
+                            "level" : {
+                                "type" : "integer",
+                                "default" : 31 
+                            },
+                            "logon" : {
+                                "type" : "boolean",
+                                "description" : "trace logging on",
+                                "default" : false
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }

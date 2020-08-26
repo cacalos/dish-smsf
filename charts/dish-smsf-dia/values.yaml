@@ -7,13 +7,16 @@ replicaCount: 1
 nameOverride: ""
 fullnameOverride: ""
 
-resources:
-  limits:
-    cpu: 2000m
-    memory: 2048Mi
-  requests:
-    cpu: 2000m
-    memory: 2048Mi
+#resources:
+#  limits:
+#    cpu: 2000m
+#    memory: 2048Mi
+#  requests:
+#    cpu: 2000m
+#    memory: 2048Mi
+
+#imagePullSecrets:
+#- name: harbor-secret
 
 nodeSelector: {}
 
@@ -21,21 +24,40 @@ tolerations: []
 
 affinity: {}
 
+service:
+  #type: NodePort
+  type: ClusterIP
+  #nodePort: 31234
+
 deployment:
   containers:
     diaSvc:
-      image: "camel.uangel.com:5000/dia_svc:v060"
-      #image: "camel.uangel.com:5000/dia_svc:latest"
-      imagePullPolicy: "IfNotPresent"
+      image: camel.uangel.com:5000/dia_svc:latest
+      imagePullPolicy: IfNotPresent
+      useManualStart: false
     adif:
-      #image: "camel.uangel.com:5000/adif:v050"
-      image: "camel.uangel.com:5000/adif:latest"
-      imagePullPolicy: "IfNotPresent"
+      image: camel.uangel.com:5000/adif:3.0.0
+      imagePullPolicy: Always
+      useManualStart: false
+    emsubagt:
+      image: camel.uangel.com:5000/emsubagt:latest
+      imagePullPolicy: Always
+      useManualStart: false
+    httpif:
+      image: camel.uangel.com:5000/usmsf-httpif:latest
+      imagePullPolicy: IfNotPresent
+      useManualStart: false
+    uccmsAgent:
+      image: camel.uangel.com:5000/uccms-sb-agent-cmd:latest
+      imagePullPolicy: IfNotPresent
+      useManualStart: false
 
-configmaps:
+configmap:
   names:
     adif: "usmsf-adif-conf"
     if: "usmsf-if-conf"
+    uccmsMeta: "usmsf-dia-uccms-meta"
+    uccmsConf: "usmsf-dia-uccms-conf"
   adifConf:
     sections:
       adif:
@@ -46,6 +68,15 @@ configmaps:
     useIp6: "no"
   httpifLogger:
     logLevels:
-      root: "DEBUG"
-      com_uangel: "DEBUG"
+      root: "ERROR"
+      com_uangel: "ERROR"
+      samsung:
+        fault: "ERROR"
+        selfdiag: "ERROR"
+        reset: "ERROR"
+        init: "ERROR"
+        console: "ERROR"
+        error: "ERROR"
+        event: "ERROR"
+        info: "ERROR"
 

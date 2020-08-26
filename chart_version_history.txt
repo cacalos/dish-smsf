@@ -13,3 +13,60 @@
   + shouldCheckAccessToken (access token 검사 여부 flag)
   + useH2C (H2C 사용 여부 flag)
   + InstanceUCCMSDB 설정 추가
+
+[ Version 1.3.0 (2020-04-09) ]
+- AWS 환경 관련 내용 추가
+
+[ Version 1.3.1 (2020-04-10) ]
+- nodeName을 차트 내 values.yaml에서 제외
+- nrf-client 관련 내용 추가
+  + shouldUseH2CModule, useH2CWithoutModule 변수 추가
+- 기타 수정
+
+[ Version 1.3.2 (2020-04-13) ]
+- dish-smsf-nrfclient -> configmaps.yaml -> smsf-profile.json -> nfServices:
+  + versions, ipEndPoints: 기존에 object 타입으로 잘못 설정돼 있던 것을 array 타입으로 수정
+
+[ Version 1.3.3 (2020-04-13) ]
+- dish-smsf/charts/dish-smsf-dia/templates/configmap-if.yaml
+  + httpif_logger.conf: 삼성 로그 포맷 관련 내용 추가
+
+[ Version 1.3.4 (2020-04-13) ]
+- dish-smsf/charts/dish-smsf-dia/templates/statefulset.yaml
+  + usmsf-dia-svc 컨테이너에 CDR_DIR 환경변수 추가
+
+[ Version 1.4.0 (2020-04-17) ]
+- health check(liveness/readiness check) 기능 관련 내용 추가
+- dish-smsf-dia에도 emsubagt 컨테이너 추가
+
+[ Version 1.4.1 (2020-04-20) ]
+- dish-smsf-dia: statefulset.yaml -> emsubagt 컨테이너 설정 위치 오류 수정
+
+[ Version 1.4.2 (2020-05-29) ]
+- dish-smsf-dia
+  + httpif NodePort 설정 기능 추가
+  + SMSC sim: udia_conf.xml 노드 주소의 namespace config 화
+
+[ Version 1.4.3 (2020-06-18) ]
+- dish-smsf-svc
+  + 컨테이너 기동 순서 변경
+    - 기존:    usmsf -> redis -> emagt
+    - 변경 후: redis -> usmsf -> emagt
+
+[ Version 1.4.4 (2020-06-23) ]
+- dish-smsf-svc timezone 설정 on/off 가능하도록 변경
+
+[ Version 2.0.0 (2020-08-03) ]
+- Ph.4 기반 패키지로 변경
+
+[ Version 2.0.2 (2020-08-19) ]
+- image 등 overriding-values에 추가
+- Ph.4 기반 패키지로 변경
+
+[ Version 2.1.0 (2020-08-20) ]
+- redis 설정 변수화 등
+
+[ Version 2.2.0 (2020-08-24) ]
+- TS팀 요청 사항 반영
+- resources 설정 오류 수정
+- 각종 값 변수화

@@ -5,6 +5,7 @@ metadata:
   name: {{ .Values.global.serviceName.emagt }}
   labels:
     app: {{ .Values.global.serviceName.emagt }}
+    {{- toYaml .Values.global.commonLabels | nindent 4 }}
 spec:
   type: {{ .Values.service.emagt.type | default "ClusterIP" }}
   ports:
@@ -27,6 +28,7 @@ metadata:
   name: {{ .Values.service.emagtWs.name }}
   labels:
     app: {{ .Values.service.emagtWs.name }}
+    {{- toYaml .Values.global.commonLabels | nindent 4 }}
 spec:
   type: {{ .Values.service.emagtWs.type | default "ClusterIP" }}
   ports:
@@ -45,18 +47,20 @@ spec:
   selector:
     app: {{ .Values.global.serviceName.emagt }}
 ---
-#apiVersion: monitoring.coreos.com/v1
-#kind: ServiceMonitor
-#metadata:
-#  namespace: {{ .Release.Namespace }}
-#  name: pm-ext
-#  labels:
-#    release: monitoring
-#    service-name: nf-metric
-#spec:
-#  selector:
-#    matchLabels:
-#     app: {{ .Values.global.serviceName.emagt }}
-#  endpoints:
-#  - port: http-pm
-#    interval: 10s
+{{- if (eq .Values.global.usePrometheus true) }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: pm-ext
+  labels:
+    release: prometheus-operator
+    {{- toYaml .Values.global.commonLabels | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+     app: {{ .Values.global.serviceName.emagt }}
+  endpoints:
+  - port: http-pm
+    interval: 10s
+{{- end }}

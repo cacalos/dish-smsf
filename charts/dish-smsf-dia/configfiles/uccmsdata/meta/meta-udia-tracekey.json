@@ -1,0 +1,54 @@
+{
+	"id": "5699ea26-d065-11ea-87d0-0242ac130003",
+	"info": {
+		"serviceName": "UDIA_TRACE",
+		"configName": "tracekey",
+		"version": "v1.0",
+		"descrpiption": "DIAMETER trace key configuration"
+	},
+	"definitions": {
+		"keys" : {
+			"schema": {
+				"type": "array",
+				"items": {
+					"type": "object",
+					"properties": {
+						"key" : {
+							"type" : "string",
+							"description" : "trace key value",
+							"default" : ""
+						},
+						"peer" : {
+							"type" : "string",
+							"description" : "DIAMETER peer name",
+							"default" : ""
+						},
+						"server" : {
+							"type" : "string",
+							"description" : "DIAMETER server name",
+							"default" : ""
+						},
+						"appid" : {
+							"type" : "integer",
+							"description" : "application id",
+							"default" : 0
+						},
+						"expire" : {
+							"type" : "string",
+							"description" : "trace expire time"
+						},
+						"level" : {
+							"type" : "integer",
+							"default" : 31 
+						},
+						"logon" : {
+							"type" : "boolean",
+							"description" : "trace logging on",
+							"default" : false
+						}
+					}
+				}
+			}
+		}
+	}
+}

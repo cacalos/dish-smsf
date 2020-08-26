@@ -30,28 +30,93 @@ data:
 
   uccms.conf: |- 
     modules = [
-        "UlibDefaults",
-        "DAO",
-        "CtrlMgr",
-        "RestClient",
-        "RestServer",
-        "CMManager"
-    ],
-    
+        echolib.Defaults
+        echolib.StartAllServer
+        ulib.Defaults
+        ulib.LimiterConfigurator
+
+        mysqllib.Defaults
+
+        uccms.DB
+        uccms.MemCache
+        uccms.APIServer
+        uccms.APIServices
+    ] ,
+
     logrus {
-        config-file = ${?LOGGER_CONFIG}
+        config-file = "/app/config/logger.conf"
+        watch-config = false 
     }
-    
-    db {
-        driver = ${?MANAGE_DB_DRIVER}
-        host = ${?MANAGE_DB_HOST}
-        user = ${?MANAGE_DB_USER}
-        password = ${?MANAGE_DB_PW}
-        dbname = ${?MANAGE_DB_NAME}
+
+    limiter.conf-file = "/app/config/limiter.conf"
+
+    apiServicePool {
+        type = alarmPool
+        pool-size = 10
+        max-queueing-duration = 2s 
     }
-    
-    server {
-        ip = "0.0.0.0"
-        port = ${?MANAGE_SVC_PORT}
-        version = "v1"
+
+    http-servers {
+        uccms {
+            host = 0.0.0.0 # uccms-specific
+            port = 9090
+            api = v1 # uccms-specific
+
+            tls = false
+            serve-for = internal
+            # metric-registry = mgmt
+            exec-context = apiServicePool 
+            request-timeout = 2s
+            limiter = internal 
+        }
     }
+
+    http-client {
+        circuit-breaker {
+            consecutiveErrors = 100
+            interval = 10s
+            baseEjectionTime = 3m
+
+            maxPendingRequest = 4
+        }
+    }
+
+    services {
+        subscriptions {
+            notif-timeout = 3s
+            heartbeat-checker: {
+                interval = 1m
+                timeout = 90s
+            }
+        }
+    }
+
+    mysqlpool {
+        type = alarmPool
+        size = 20
+    }
+
+    mysql {
+        driver : mysql
+        host : ${?MANAGE_DB_HOST}
+        user : root
+        password : "root.123"
+        dbname : uccms
+
+        # common configurations for connector
+        pool : mysqlpool
+        query-timeout: 3s # default: 3s
+        max-open-conns: 0
+        max-idle-conns: 0
+        max-conn-liftime: 0
+    }
+
+  limiter.conf: |- 
+    configuration {
+        limiters {
+            internal {
+                max-tps : 100
+            }
+        }
+    }
+

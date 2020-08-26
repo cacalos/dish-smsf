@@ -1,0 +1,3 @@
+#!/bin/bash
+
+helm install smsf-sims ./dish-smsf-sims --namespace coredev-usmsf-sim --debug --dry-run

@@ -1,0 +1,14 @@
+#!/bin/bash
+
+if [ $# -ne 4 ]; then
+    echo "Usage: $(basename $0) <namespace> <pod> <container> <shell>"
+    exit 1
+fi
+
+namespace="$1"
+pod="$2"
+container="$3"
+shell="$4"
+
+kubectl exec -it "$pod" -c "$container" -n "$namespace" -- "$shell"
+

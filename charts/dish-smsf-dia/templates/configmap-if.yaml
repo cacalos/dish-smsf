@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.configmaps.names.if }}
-  selfLink: /api/v1/namespaces/{{ .Release.Namespace }}/configmaps/{{ .Values.configmaps.names.if }}
+  name: {{ .Values.configmap.names.if }}
+  namespace: {{ .Release.Namespace }}
 data:
-  {{- $dirpath := printf "configfiles/if/*.yaml" }}
+  {{- $dirpath := printf "configfiles/if/*.{json,yaml}" }}
   {{- range $path, $_ := .Files.Glob $dirpath }}
   {{ base $path }}: |-
   {{ $.Files.Get $path | nindent 4 }}
@@ -12,82 +12,264 @@ data:
 
   httpif.conf: |-
     modules = [
-        "UlibDefaults"
-        "ulib.pprof"
-        "httpifDefaults"
-        "UccmsClientModule"
+        // 기본적으로 ulib 과 echolib 의 Defaults 가 필요합니다.
+        ulib.Defaults
+        echolib.Defaults
+        upolicy.Defaults
+
+        // StartAllServer 를 포함 시키면, http-servers 에 리스트업된 모든 서버가 실행됩니다.
+        echolib.StartAllServer
+
+        // limiter config를 구성하는 모듈입니다.
+        ulib.LimiterConfigurator    
+
+        httpif.diameter
+        TraceMgr
+
+        # UCCMS-Agent 서비스 모듈
+        agent.EventListener
+        agent.EventListenerService
+        agent.AgentService
+
+       # UCCMS-Consumer 모듈
+        consumer.Watcher  
+        //ulib.pprof
     ]
-    
+
+    runtime {
+        go-max-procs = 64
+    }
+
+    // map 서버가 사용할 go routine pool 입니다.
+    HTTPIFServerPool {
+        type = alarmPool
+        pool-size = 200
+        // server 의 request-timeout 에 맞춰 설정하세요
+        max-queueing-duration = 3s
+    }
+
+    // uccms 서버가 사용할 go routine pool 입니다.
+    UCCMSServerPool{
+        type = alarmPool
+        pool-size = 200
+        // server 의 request-timeout 에 맞춰 설정하세요
+        max-queueing-duration = 5s
+    }
+
+    # API 서버가 사용할 go routine pool
+    apiServicePool {
+        type = alarmPool
+        pool-size = 200
+        max-queueing-duration = 2s # server 의 request-timeout 에 맞춰 설정 할 것
+    }
+
+    // http 서버 설정입니다.
+    http-servers {
+
+        // 내부 management 용으로 8080 서버를 실행합니다. tls 아닙니다. 내부 연동은 tls연동을 사용하지 않습니다.
+        httpif {
+            maxprocs = 10
+            port = 8080
+            tls = false
+            serve-for = internal
+            metric-registry = httpif
+            // 용도별로 worker pool을 분리하여 사용합니다. 
+            exec-context = HTTPIFServerPool 
+
+            // request 를 timeout 처리할 시간
+            request-timeout = 3s
+
+            // 적용할 limiter 를 설정
+            limiter = internal
+
+            services {
+                // httpif-v1 서비스를 활성화 시킵니다.
+                httpif-v1 {
+                    // 서비스의 prefix 는 /mgmt/smsf 입니다.
+                    prefix = /internal/v1
+
+                    // localhost 와 192.168.3.xxx  에서만 이 서비스를 사용할 수 있습니다.
+                    allowed-roles = [
+                    //    "ip:localhost" , 
+                    //    "ip:192.168.3.0/24"
+                    ]
+                }
+            }
+        }
+
+      uccms {
+            port = 8100
+            tls = false
+            serve-for = internal
+            metric-registry = uccms
+            // 용도별로 worker pool을 분리하여 사용합니다. 
+            exec-context = UCCMSServerPool 
+
+            // 연동할 UCCMS 접속 정보
+            uccmshost = "127.0.0.1"
+            uccmsport = "8086"
+
+            config {
+                scheme = "http"
+                use = "map"
+
+                // TODO 이름을 meta file path 로...
+                decisionMetaPath = /home/app/config/rselec_meta.json
+                smsfMetaPath = /home/app/config/smsf_meta.json
+                smscMeteaPath = /home/app/config/smsc_meta.json
+
+                // TODO 이름을 data file path 로...
+                udecisionPath = /home/app/config/rselec_config.json
+                usmsfPath = /home/app/config/smsf_config.json
+                usmscPath = /home/app/config/smsc_config.json
+            }
+
+            // request 를 timeout 처리할 시간
+            request-timeout = 3s
+
+            // 적용할 limiter 를 설정
+            limiter = internal
+
+            services {
+                // smsf-v1 서비스를 활성화 시킵니다.
+                uccms-v1 {
+                    // 서비스의 prefix 는 /mgmt/smsf 입니다.
+                    //prefix = /internal/v1
+
+                    // localhost 와 192.168.3.xxx  에서만 이 서비스를 사용할 수 있습니다.
+                    allowed-roles = [
+                    //    "ip:localhost" , 
+                    //    "ip:192.168.3.0/24"
+                    ]
+                }
+            }
+        }
+
+        # UCCMS-Agent의 이벤트 리스너 서버 설정
+        event-listener {
+            host = 0.0.0.0 # agent-specific
+            port = 11090
+            api-uri = /uccms-agent/v1/notifications # agent-specific
+
+            tls = false
+            serve-for = internal
+            # metric-registry = mgmt
+            exec-context = apiServicePool # 용도별로 worker pool을 분리하여 사용
+            request-timeout = 2s
+            limiter = internal # 적용할 limiter 를 설정
+        }
+    }
+
+    // limiter 설정파일을 지정합니다.
+    limiter.config-file = "/home/app/config/limiter.conf"
+
+    // log 설정입니다.
     logrus {
-        format = "text"
-        config-file = ${?SMS_DATA_DIR}/httpif_logger.conf
-        watch-config = true
+        config-file = "/home/app/config/httpif_logger.conf"
     }
-    
-    httpif {
-        SetMaxOpenConns = 200
-        maxprocs = 10
-    }
-    
-    http-interface {
-        http {
-            port = {{ .Values.global.port.dia.container }}
-            max-handler = 0
-            max-concurrent-streams = 5000
-            max-readframesize = 10000000
-            idle-timeout = 60
-            maxuploadbuffer-per-connection = 700000000
-            maxuploadbuffer-per-stram = 700000000
-            verbose-logsa = false
+
+    timer {
+        internal-router {
+            service-request-timeout = 2s
         }
-        client-connection {
-            timeout = 20
-            keep-alive = 30
-            expire-time = 60
-        }
-       
-        MaxHeaderListSize = 10000000
-        StrictMaxConcurrentStreams = false
     }
-    
-    http-configmgr {
+
+    http-tracemgr {
         http {
-            port = {{ .Values.global.smsf.serverPort.forConfigMgr.http }}
+            port = 8100
         }
         use = map
     }
-    
-    http-tracemgr {
-        http {
-            port = {{ .Values.global.smsf.serverPort.forTrace.http }}
+
+    # 일단, service-pod라고 지칭.. service-pod의 주소
+    service {
+        # mapServer의 주소
+        address = "usmsf-svc-internal.{{ .Release.Namespace }}.svc.{{ .Values.global.dnsName.zone }}:{{ .Values.global.smsf.serverPort.forInternal.http }}"
+        # circuitBreaker 사용 유무(사용 : ture, 미사용 : false(default)) - 일단 여기 배치..
+        useCircuitBreaker = false
+
+        reloadable-configs {
+            usmsfPath = /home/app/uccms/configurations/smsc_config.3e6a91a6-5bea-48b0-a137-889ae40c648d.json
+            usmscPath = /home/app/uccms/configurations/smsf_config.6d004beb-0fa2-4374-b97a-f30bac15fe21.json
         }
     }
-    
-    tcpmgr {
-        http {
-            port = 8000
+
+    # UCCMS-Agent 서비스 설정
+    agent-service {
+        uccms {
+            host = "usmsf-uccms.{{ .Release.Namespace }}.svc.{{ .Values.global.dnsName.zone }}"
+            port = 9090
+            apiUri = /uccms/v1
+            tls = false
         }
-        tcp {
-            info = "127.0.0.1:8000"
-        }
-        connCnt = 8
+        preregistrations-path = /home/app/uccms/preregistrations
+        configurations-path = /home/app/uccms/configurations
+        preregistration-retry-delay = 5s
+        heartbeat-interval = 1m
+        heartbeat-max-retries = 3
+    }
+
+
+    #msgProxy의 주소
+    msgproxy {
+         address = "127.0.0.1:8000"
+    }
+        
+    #redis 주소 for sigtran
+    redis {
+        server.uri = "127.0.0.1:6379"
     }
     
   httpif_logger.conf: |-
     loggers {
         root {
-            level = {{ .Values.configmaps.httpifLogger.logLevels.root | quote }}
+            level = {{ .Values.configmap.httpifLogger.logLevels.root | quote }}
             appender = [
                 console
             ]
         }
     
         com.uangel {
-            level = {{ .Values.configmaps.httpifLogger.logLevels.com_uangel | quote }}
+            level = {{ .Values.configmap.httpifLogger.logLevels.com_uangel | quote }}
             additivity = true
             appender = [
                 uangel
             ]
+        }
+
+        samsung {
+            fault {
+                level = {{ .Values.configmap.httpifLogger.logLevels.samsung.fault | quote }}
+                appender = [ samsung_alarm, samsung_console ]
+            }
+            selfdiag {
+                level = {{ .Values.configmap.httpifLogger.logLevels.samsung.selfdiag | quote }}
+                appender = [ samsung_diag, samsung_console ]
+            }
+            reset {
+                level = {{ .Values.configmap.httpifLogger.logLevels.samsung.reset | quote }}
+                appender = [ samsung_diag, samsung_console ]
+            }
+            init {
+                level = {{ .Values.configmap.httpifLogger.logLevels.samsung.init | quote }}
+                appender = [ samsung_diag, samsung_console ]
+            }
+            config {
+                level = {{ .Values.configmap.httpifLogger.logLevels.samsung.console | quote }}
+                appender = [ samsung_diag, samsung_console ]
+            }
+            error {
+                level = {{ .Values.configmap.httpifLogger.logLevels.samsung.error | quote }}
+                appender = [ samsung_app, samsung_console ]
+            }
+            event {
+                level = {{ .Values.configmap.httpifLogger.logLevels.samsung.event | quote }}
+                appender = [ samsung_app, samsung_console ]
+            }
+            info {
+                level = {{ .Values.configmap.httpifLogger.logLevels.samsung.info | quote }}
+                appender = [ samsung_app, samsung_console ]
+            }
         }
     }
     
@@ -100,7 +282,27 @@ data:
         uangel {
             format = "text"
             class = "File"
-            file = ${?SMSC_HOME}/log/httpif/httpif.log
+            file = ${?USMSF_HOME}/log/httpif/httpif.log
+        }
+        samsung_console {
+            format = "samsung"
+            class = "Console"
+            print-caller = true
+        }
+        samsung_alarm {
+            format = "samsung"
+            class = "RollingFile"
+            file-name-pattern = ${?USMSF_HOME}/log/httpif/alarm.log.%Y%m%d
+        }
+        samsung_diag {
+            format = "samsung"
+            class = "RollingFile"
+            file-name-pattern = ${?USMSF_HOME}/log/httpif/diag.log.%Y%m%d
+        }
+        samsung_app {
+            format = "samsung"
+            class = "RollingFile"
+            file-name-pattern = ${?USMSF_HOME}/log/httpif/app.log.%Y%m%d
         }
     }
 
